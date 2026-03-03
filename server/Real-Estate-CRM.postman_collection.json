@@ -1,0 +1,94 @@
+{
+  "info": {
+    "name": "AI Real Estate CRM API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Admin User\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"admin\",\n  \"agencyName\": \"Prime Estates\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Properties - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/api/properties", "host": ["{{baseUrl}}"], "path": ["api", "properties"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Luxury 4BR Duplex\",\n  \"description\": \"Modern duplex with pool and smart home features\",\n  \"price\": 420000,\n  \"location\": \"Abuja\",\n  \"type\": \"Duplex\",\n  \"bedrooms\": 4,\n  \"bathrooms\": 5,\n  \"status\": \"available\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Leads - Public Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{baseUrl}}/api/leads/public", "host": ["{{baseUrl}}"], "path": ["api", "leads", "public"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"phone\": \"+2348012345678\",\n  \"budget\": 300000,\n  \"preferredLocation\": \"Abuja\",\n  \"message\": \"I need a 3-bedroom home near schools and malls.\"\n}"
+        }
+      }
+    },
+    {
+      "name": "AI - Generate Description",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/api/ai/generate-description", "host": ["{{baseUrl}}"], "path": ["api", "ai", "generate-description"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"bedrooms\": 4,\n  \"location\": \"Abuja\",\n  \"price\": \"$420,000\",\n  \"features\": \"smart home, swimming pool, fitted kitchen\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Analytics - Overview",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/api/analytics/overview", "host": ["{{baseUrl}}"], "path": ["api", "analytics", "overview"] }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" }
+  ]
+}
