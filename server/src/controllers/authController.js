@@ -50,8 +50,14 @@ const me = asyncHandler(async (req, res) => {
   return res.json({ success: true, user: req.user });
 });
 
+const getAgents = asyncHandler(async (req, res) => {
+  const agents = await User.find({ role: 'agent' }).select('name email role agencyName createdAt');
+  return res.json({ success: true, data: agents });
+});
+
 module.exports = {
   register,
   login,
   me,
+  getAgents,
 };

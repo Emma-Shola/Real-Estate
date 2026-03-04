@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MoreHorizontal, UserPlus, Trash2, Edit } from 'lucide-react';
+import { Search, MoreHorizontal, UserPlus, Trash2, Edit, Mail, Phone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 import StatusBadge from '@/components/StatusBadge';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
@@ -35,24 +37,59 @@ const getScoreColor = (score: number) => {
 
 const LeadsPage = () => {
   const { isAdmin } = useAuth();
+  const { toast } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [agents, setAgents] = useState<Array<{ _id: string; name: string; email: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [assigningLeadId, setAssigningLeadId] = useState<string | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('');
 
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const res = await api.get('/api/leads');
-        const rows = Array.isArray(res.data?.data) ? res.data.data : [];
+        const [leadsRes, agentsRes] = await Promise.all([
+          api.get('/api/leads'),
+          isAdmin ? api.get('/api/auth/agents') : Promise.resolve({ data: { data: [] } }),
+        ]);
+
+        const rows = Array.isArray(leadsRes.data?.data) ? leadsRes.data.data : [];
+        const agentRows = Array.isArray(agentsRes.data?.data) ? agentsRes.data.data : [];
         setLeads(rows.map(toLead));
+        setAgents(agentRows);
       } finally {
         setLoading(false);
       }
     };
 
     fetchLeads();
-  }, []);
+  }, [isAdmin]);
+
+  const updateLeadStatus = async (leadId: string, status: string) => {
+    try {
+      const res = await api.put(`/api/leads/${leadId}`, { status });
+      const updated = toLead(res.data?.data);
+      setLeads((prev) => prev.map((lead) => (lead.id === leadId ? updated : lead)));
+      toast({ title: 'Lead updated', description: `Status changed to ${status}.` });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update lead status.', variant: 'destructive' });
+    }
+  };
+
+  const assignLead = async () => {
+    if (!assigningLeadId || !selectedAgentId) return;
+    try {
+      const res = await api.put(`/api/leads/${assigningLeadId}`, { assignedAgent: selectedAgentId });
+      const updated = toLead(res.data?.data);
+      setLeads((prev) => prev.map((lead) => (lead.id === assigningLeadId ? updated : lead)));
+      setAssigningLeadId(null);
+      setSelectedAgentId('');
+      toast({ title: 'Lead assigned', description: 'Lead has been assigned to an agent.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to assign lead.', variant: 'destructive' });
+    }
+  };
 
   const handleDelete = async (leadId: string) => {
     try {
@@ -139,8 +176,26 @@ const LeadsPage = () => {
                           <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem><Edit className="h-4 w-4 mr-2" /> Edit</DropdownMenuItem>
-                          {isAdmin && <DropdownMenuItem><UserPlus className="h-4 w-4 mr-2" /> Assign Agent</DropdownMenuItem>}
+                          <DropdownMenuItem onClick={() => updateLeadStatus(lead.id, 'contacted')}>
+                            <Edit className="h-4 w-4 mr-2" /> Mark Contacted
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateLeadStatus(lead.id, 'inspection')}>
+                            <Edit className="h-4 w-4 mr-2" /> Mark Inspection
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateLeadStatus(lead.id, 'closed')}>
+                            <Edit className="h-4 w-4 mr-2" /> Mark Closed
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <a href={`mailto:${lead.email}`}><Mail className="h-4 w-4 mr-2" /> Email Lead</a>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <a href={`tel:${lead.phone}`}><Phone className="h-4 w-4 mr-2" /> Call Lead</a>
+                          </DropdownMenuItem>
+                          {isAdmin && (
+                            <DropdownMenuItem onClick={() => setAssigningLeadId(lead.id)}>
+                              <UserPlus className="h-4 w-4 mr-2" /> Assign Agent
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => handleDelete(lead.id)} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -152,6 +207,31 @@ const LeadsPage = () => {
           </div>
         </motion.div>
       )}
+
+      <Dialog open={Boolean(assigningLeadId)} onOpenChange={(open) => !open && setAssigningLeadId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Lead to Agent</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an agent" />
+              </SelectTrigger>
+              <SelectContent>
+                {agents.map((agent) => (
+                  <SelectItem key={agent._id} value={agent._id}>
+                    {agent.name} ({agent.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button className="w-full" onClick={assignLead} disabled={!selectedAgentId}>
+              Assign Lead
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

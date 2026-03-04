@@ -265,6 +265,30 @@ const swaggerDocument = {
         },
       },
     },
+    '/api/ai/chatbot-public': {
+      post: {
+        tags: ['AI'],
+        summary: 'Public inquiry chatbot endpoint (no auth)',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['message'],
+                properties: {
+                  message: { type: 'string' },
+                  propertyContext: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Chatbot reply generated' },
+        },
+      },
+    },
     '/api/analytics/overview': {
       get: {
         tags: ['Analytics'],
@@ -286,4 +310,3 @@ const setupSwagger = (app) => {
 module.exports = {
   setupSwagger,
 };
-

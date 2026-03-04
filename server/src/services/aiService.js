@@ -134,8 +134,26 @@ Features: ${features}`;
   }
 };
 
+const generateChatbotReply = async ({ message, propertyContext }) => {
+  const prompt = `You are a helpful real estate assistant for website visitors.
+Answer briefly and clearly, and encourage the user to share contact details for follow-up.
+If the user asks pricing/availability questions, suggest booking an inspection.
+
+Property context (optional): ${propertyContext || 'N/A'}
+Visitor message: ${message}`;
+
+  try {
+    const text = await runPrompt(prompt, 0.4);
+    return text || 'Thanks for your question. Could you share your preferred location and budget?';
+  } catch (error) {
+    console.error('generateChatbotReply failed:', error.message);
+    return 'Thanks for reaching out. Please share your budget, preferred location, and timeline, and an agent will follow up.';
+  }
+};
+
 module.exports = {
   analyzeLead,
   generateLeadResponse,
   generatePropertyDescription,
+  generateChatbotReply,
 };
